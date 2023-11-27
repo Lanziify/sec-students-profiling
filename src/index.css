@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#root {
+  background-color: #f3f4f6;
+}
+
+.menu-shown {
+  position: relative;
+  height: auto !important;
+  overflow: hidden;
+}
+
+.swal2-popup {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
