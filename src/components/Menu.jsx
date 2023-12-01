@@ -1,11 +1,12 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { MdEditDocument, MdFolder,  MdPerson } from "react-icons/md";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import Portal from "./Portal";
 
 const Menu = (props) => {
   const { user, logoutUser } = useAuth();
+  const location = useLocation()
 
   const menu = [
     {
@@ -32,6 +33,8 @@ const Menu = (props) => {
   }
 
   if (!props.showMenu) return;
+
+  if (location.pathname.split("/").includes('print') && window.innerWidth > 640) return
 
   return (
     <div className="max:sm:bottom-0 sticky bottom-0 top-2 z-10 flex  max-h-[calc(100vh_-_16px)] flex-col justify-between overflow-hidden rounded-md border bg-white max-sm:fixed max-sm:left-0 max-sm:right-0 max-sm:top-12 max-sm:max-h-full max-sm:rounded-none max-sm:border-none">

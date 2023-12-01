@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { forwardRef, useEffect, useState } from "react";
 import {
   regions,
   provinces,
@@ -13,14 +13,15 @@ import {
   serverTimestamp,
   query,
   where,
-  getDoc,
+  addDoc,
   getDocs,
-  limit,
+  updateDoc,
 } from "firebase/firestore";
 import { firestore } from "../config/firebase-config";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
-const SayonForm = (props) => {
+const SayonForm = forwardRef((props, ref) => {
   const [value, setValue] = useState({
     school: {
       id: "",
@@ -45,6 +46,7 @@ const SayonForm = (props) => {
       barangay: "",
       municipality: "",
       province: "",
+      region: "",
     },
     parents: {
       father: "",
@@ -58,6 +60,11 @@ const SayonForm = (props) => {
     modality: "",
     remarks: "",
   });
+  const navigate = useNavigate();
+
+  const [currentProfile, setCurrentProfile] = useState([]);
+
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [error, setError] = useState({});
 
@@ -199,14 +206,15 @@ const SayonForm = (props) => {
       name: "mt",
       value: value.mt,
       label: "Mother Tounge",
-      placeholder: "Grade 1 to 3 only",
+      placeholder:
+        props.profileData || props.onPrintPage ? "" : "Grade 1 to 3 only",
       type: "text",
     },
     {
       name: "ip",
       value: value.ip,
       label: "IP",
-      placeholder: "Ethnic Group",
+      placeholder: props.profileData || props.onPrintPage ? "" : "Ethnic Group",
       type: "text",
     },
     {
@@ -217,7 +225,7 @@ const SayonForm = (props) => {
     },
   ];
 
-  const parentsField = [
+  const parentsFields = [
     {
       name: "parents.mother",
       value: value.parents.mother,
@@ -234,7 +242,7 @@ const SayonForm = (props) => {
     },
   ];
 
-  const guardianField = [
+  const guardianFields = [
     {
       name: "guardian.name",
       value: value.guardian.name,
@@ -252,13 +260,16 @@ const SayonForm = (props) => {
       name: "guardian.contact",
       value: value.guardian.contact,
       label: "Contact No.",
-      placeholder: "Contact Number of Parent or Guardian",
+      placeholder:
+        props.profileData || props.onPrintPage
+          ? ""
+          : "Contact Number of Parent or Guardian",
       type: "number",
       span: "col-span-2",
     },
   ];
 
-  const learningField = [
+  const learningFields = [
     {
       name: "modality",
       value: value.modality,
@@ -309,6 +320,13 @@ const SayonForm = (props) => {
   };
 
   const province = (e) => {
+    setValue({
+      ...value,
+      address: {
+        ...value.address,
+        region: e.target.selectedOptions[0].text,
+      },
+    });
     provinces(e.target.value).then((response) => {
       setProvince(response);
       setCity([]);
@@ -352,6 +370,60 @@ const SayonForm = (props) => {
     });
   };
 
+  const renderOptions = (addressData, code, name) => {
+    return (
+      <>
+        {addressData &&
+          addressData.length > 0 &&
+          addressData.map((item) => (
+            <option key={item[code]} value={item[code]}>
+              {item[name]}
+            </option>
+          ))}
+      </>
+    );
+  };
+
+  const addressFields = [
+    {
+      onChange: province,
+      onSelect: region,
+      data: regionData,
+      label: "Region",
+      propValue: props?.profileData?.address.region,
+      placeholder: "Select Region",
+      renderOptions: renderOptions(regionData, "region_code", "region_name"),
+    },
+    {
+      onChange: city,
+      data: provinceData,
+      label: "Province",
+      propValue: props?.profileData?.address.province,
+      placeholder: "Select Province",
+      renderOptions: renderOptions(
+        provinceData,
+        "province_code",
+        "province_name",
+      ),
+    },
+    {
+      onChange: barangay,
+      data: cityData,
+      label: "Municipality",
+      propValue: props?.profileData?.address.municipality,
+      placeholder: "Select Municipality",
+      renderOptions: renderOptions(cityData, "city_code", "city_name"),
+    },
+    {
+      onChange: brgy,
+      data: barangayData,
+      label: "Barangay",
+      propValue: props?.profileData?.address.barangay,
+      placeholder: "Select Barangay",
+      renderOptions: renderOptions(barangayData, "brgy_code", "brgy_name"),
+    },
+  ];
+
   const handleSubmitForm = async (e) => {
     e.preventDefault();
     try {
@@ -372,22 +444,25 @@ const SayonForm = (props) => {
 
       const querySnapshot = await getDocs(getRecordQuery);
 
-      const studentProfile = []
+      const studentProfile = [];
 
-      querySnapshot.forEach( (doc) => {
+      querySnapshot.forEach((doc) => {
         studentProfile.push(doc.data());
       });
 
-      if (studentProfile.length === 0) {
-        await setDoc(doc(profileDocRef), {
-          ...value,
-          createdAt: serverTimestamp(),
-        });
-      } else {
+      if (studentProfile.length > 0) {
         throw new Error(
           `Student profile with LRN:${value.lrn} already exists in the database. Please check the data you are trying to submit.`,
         );
       }
+
+      const docRef = await addDoc(profileDocRef, {});
+      await setDoc(doc(profileDocRef, docRef.id), {
+        ...value,
+        docId: docRef.id,
+        updatedAt: null,
+        createdAt: serverTimestamp(),
+      });
 
       Swal.close();
       Swal.fire({
@@ -402,47 +477,133 @@ const SayonForm = (props) => {
           htmlContainer: "swal2-text-body",
         },
       });
-      // setValue({
-      //   school: {
-      //     id: "",
-      //     name: "",
-      //     region: "",
-      //     division: "",
-      //     sy: "",
-      //     gradelvl: "",
-      //     district: "",
-      //     section: "",
-      //   },
-      //   lrn: "",
-      //   name: "",
-      //   sex: "",
-      //   birth: "",
-      //   age: "",
-      //   mt: "",
-      //   ip: "",
-      //   religion: "",
-      //   address: {
-      //     street: "",
-      //     barangay: "",
-      //     municipality: "",
-      //     province: "",
-      //   },
-      //   parents: {
-      //     father: "",
-      //     mother: "",
-      //   },
-      //   guardian: {
-      //     name: "",
-      //     relationship: "",
-      //     contact: "",
-      //   },
-      //   modality: "",
-      //   remarks: "",
-      // });
-      // setRegion();
-      // setProvince();
-      // setCity();
-      // setBarangay();
+      setValue({
+        school: {
+          id: "",
+          name: "",
+          region: "",
+          division: "",
+          sy: "",
+          gradelvl: "",
+          district: "",
+          section: "",
+        },
+        lrn: "",
+        name: "",
+        sex: "",
+        birth: "",
+        age: "",
+        mt: "",
+        ip: "",
+        religion: "",
+        address: {
+          street: "",
+          barangay: "",
+          municipality: "",
+          province: "",
+        },
+        parents: {
+          father: "",
+          mother: "",
+        },
+        guardian: {
+          name: "",
+          relationship: "",
+          contact: "",
+        },
+        modality: "",
+        remarks: "",
+      });
+      setRegion();
+      setProvince();
+      setCity();
+      setBarangay();
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops! Something went wrong.",
+        text: error.message,
+        showConfirmButton: true,
+        confirmButtonText: "Confirm",
+        confirmButtonColor: "#3b82f6",
+        customClass: {
+          title: "text-xl",
+          htmlContainer: "swal2-text-body",
+        },
+      });
+    }
+  };
+
+  const handleCancelUpdate = () => {
+    if (currentProfile === value) {
+      setIsUpdating(false);
+      props.isUpdating(false);
+    } else {
+      Swal.fire({
+        title: "Are you sure you want to cancel?",
+        showCancelButton: true,
+        showConfirmButton: true,
+        reverseButtons: true,
+        cancelButtonColor: "#3b82f6",
+        confirmButtonColor: "#6b7280",
+        focusConfirm: false,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setIsUpdating(false);
+        }
+      });
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      if (isUpdating && currentProfile === value) return;
+
+      await Swal.fire({
+        title: "Are you sure you want to update this record?",
+        showCancelButton: true,
+        showConfirmButton: true,
+        confirmButtonText: "Confirm",
+        reverseButtons: true,
+        confirmButtonColor: "#3b82f6",
+        cancelButtonColor: "#6b7280",
+        customClass: {
+          title: "text-xl",
+          htmlContainer: "swal2-text-body",
+        },
+      }).then(async (result) => {
+        if (result.isDenied) {
+          setIsUpdating(false);
+        }
+      });
+
+      Swal.fire({
+        title: "Updating Record",
+        text: "Updating Student Profile. Please wait...",
+        allowEscapeKey: false,
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      await updateDoc(doc(profileDocRef, props.profileData.docId), {
+        ...value,
+        updatedAt: serverTimestamp(),
+      });
+
+      Swal.close();
+      Swal.fire({
+        icon: "success",
+        title: "Profile Updated!",
+        showConfirmButton: false,
+        customClass: {
+          title: "text-xl",
+          htmlContainer: "swal2-text-body",
+        },
+      });
+      setIsUpdating(false);
+      navigate(-1);
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -460,13 +621,20 @@ const SayonForm = (props) => {
   };
 
   useEffect(() => {
+    if (props.profileData) {
+      setValue(props.profileData);
+      setCurrentProfile(props.profileData);
+    }
+  }, [isUpdating]);
+
+  useEffect(() => {
     region();
   }, []);
 
   return (
-    <form className="p-4" onSubmit={handleSubmitForm}>
+    <form className="p-4 text-sm" onSubmit={handleSubmitForm} ref={ref}>
       {/* Header */}
-      <div className="mb-8 p-8">
+      <div className="mb-8">
         <h1 className="text-center text-xl font-black text-blue-500">
           School Form 1 (SF 1) School Registrar
         </h1>
@@ -477,13 +645,19 @@ const SayonForm = (props) => {
       </div>
       {/* Fields */}
 
-      <div className="mb-4 flex gap-8  max-lg:flex-col">
+      <div
+        className={`mb-4 flex gap-8  max-lg:flex-col ${
+          props.onPrintPage && "max-md:flex-row "
+        }`}
+      >
         {schoolFields.map((field, index) => (
           <div key={index} className={`grid flex-1 ${field.span} gap-2`}>
             {field.formField.map((formField, formFieldIndex) => (
               <div
                 key={formFieldIndex}
-                className={`flex flex-col text-sm ${formField.span}`}
+                className={`flex flex-col ${formField.span} ${
+                  props.onPrintPage && "border-b"
+                }`}
               >
                 <label
                   htmlFor={formField.name}
@@ -499,7 +673,16 @@ const SayonForm = (props) => {
                   placeholder={formField.placeholder}
                   onChange={handleOnChange}
                   required
-                  className="rounded-sm border border-gray-300 px-2 py-1"
+                  disabled={
+                    props?.profileData ? (!isUpdating ? true : false) : false
+                  }
+                  className={`rounded-sm ${
+                    props?.profileData
+                      ? !isUpdating
+                        ? ""
+                        : "border"
+                      : "border"
+                  } border-gray-300 px-2 py-1 disabled:bg-gray-200`}
                 />
               </div>
             ))}
@@ -507,14 +690,18 @@ const SayonForm = (props) => {
         ))}
       </div>
 
-      <h1 className="mb-4 text-xl font-bold text-gray-400">Profile</h1>
+      <h1 className="mb-2 text-lg font-bold text-gray-400">Profile</h1>
 
-      <div className="mb-4 gap-8">
+      <div className="mb-2 gap-8">
         <div className="grid grid-cols-3 gap-2">
           {profileFields.map((formField, formFieldIndex) => (
             <div
               key={formFieldIndex}
-              className={`flex flex-col text-sm ${formField.span} max-md:col-span-3 max-sm:col-span-3`}
+              className={`flex flex-col ${formField.span} ${
+                props.onPrintPage
+                  ? "border-b"
+                  : "max-md:col-span-3 max-sm:col-span-3"
+              }`}
             >
               {["sex"].includes(formField.name) ? (
                 <>
@@ -523,34 +710,47 @@ const SayonForm = (props) => {
                   </span>
 
                   <div className="flex h-full items-center gap-8">
-                    {genderFields.map((field, genderIndex) => (
-                      <div
-                        key={genderIndex}
-                        className="flex items-center gap-2"
-                      >
-                        <input
-                          id={field.name}
-                          name={field.name}
-                          value={field.value}
-                          checked={field.checked}
-                          type={formField.type}
-                          onChange={(e) => {
-                            setValue({
-                              ...value,
-                              [formField.name]: e.target.checked
-                                ? e.target.name.charAt(0).toUpperCase()
-                                : "",
-                            });
-                          }}
-                        />
-                        <label
-                          htmlFor={field.name}
-                          className="text-[11px] font-bold"
-                        >
-                          {field.label}
-                        </label>
-                      </div>
-                    ))}
+                    {props.onPrintPage ? (
+                      <p>{props.profileData.sex}</p>
+                    ) : (
+                      <>
+                        {genderFields.map((field, genderIndex) => (
+                          <div
+                            key={genderIndex}
+                            className="flex items-center gap-2"
+                          >
+                            <input
+                              id={field.name}
+                              name={field.name}
+                              value={field.value}
+                              checked={field.checked}
+                              type={formField.type}
+                              disabled={
+                                props?.profileData
+                                  ? !isUpdating
+                                    ? true
+                                    : false
+                                  : false
+                              }
+                              onChange={(e) => {
+                                setValue({
+                                  ...value,
+                                  [formField.name]: e.target.checked
+                                    ? e.target.name.charAt(0).toUpperCase()
+                                    : "",
+                                });
+                              }}
+                            />
+                            <label
+                              htmlFor={field.name}
+                              className="text-[11px] font-bold"
+                            >
+                              {field.label}
+                            </label>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </>
               ) : (
@@ -569,7 +769,16 @@ const SayonForm = (props) => {
                     placeholder={formField.placeholder}
                     onChange={handleOnChange}
                     required={formField.required}
-                    className="rounded-sm border border-gray-300 px-2 py-1"
+                    disabled={
+                      props?.profileData ? (!isUpdating ? true : false) : false
+                    }
+                    className={`rounded-sm ${
+                      props?.profileData
+                        ? !isUpdating
+                          ? ""
+                          : "border"
+                        : "border"
+                    } border-gray-300 px-2 py-1 disabled:bg-gray-200`}
                   />
                 </>
               )}
@@ -578,9 +787,9 @@ const SayonForm = (props) => {
         </div>
       </div>
 
-      <h1 className="mb-4 text-xl font-bold text-gray-400">Address</h1>
+      <h1 className="mb-2 text-lg font-bold text-gray-400">Address</h1>
 
-      <div className="mb-2">
+      <div className={`mb-2 ${props.onPrintPage && "border-b"}`}>
         <label htmlFor="street" className="text-[11px] font-bold">
           Street
         </label>
@@ -592,75 +801,72 @@ const SayonForm = (props) => {
           placeholder="House No. / Street / Sitio / Purok"
           onChange={handleOnChange}
           required
-          className="w-full rounded-sm border border-gray-300 px-2 py-1 text-sm"
+          disabled={props?.profileData ? (!isUpdating ? true : false) : false}
+          className={`w-full rounded-sm ${
+            props?.profileData ? (!isUpdating ? "" : "border") : "border"
+          } border-gray-300 px-2 py-1 disabled:bg-gray-200`}
         />
       </div>
 
-      <div className="mb-4 grid grid-cols-3 grid-rows-2 gap-2 [&>select]:max-md:col-span-3">
-        <select
-          onChange={province}
-          onSelect={region}
-          className="col-span-3 rounded-sm border border-gray-300 px-2 py-1 text-sm"
-          required="required"
-        >
-          <option value="">Select Region</option>
-          {regionData &&
-            regionData.length > 0 &&
-            regionData.map((item) => (
-              <option key={item.region_code} value={item.region_code}>
-                {item.region_name}
-              </option>
-            ))}
-        </select>
-        <select
-          onChange={city}
-          className="rounded-sm border border-gray-300 px-2 py-1 text-sm"
-          required="required"
-        >
-          <option value="">Select Province</option>
-          {provinceData &&
-            provinceData.length > 0 &&
-            provinceData.map((item) => (
-              <option key={item.province_code} value={item.province_code}>
-                {item.province_name}
-              </option>
-            ))}
-        </select>
-        <select
-          onChange={barangay}
-          className="rounded-sm border border-gray-300 px-2 py-1 text-sm"
-          required="required"
-        >
-          <option value="">Select Municipality</option>
-          {cityData &&
-            cityData.length > 0 &&
-            cityData.map((item) => (
-              <option key={item.city_code} value={item.city_code}>
-                {item.city_name}
-              </option>
-            ))}
-        </select>
-        <select
-          onChange={brgy}
-          className="rounded-sm border border-gray-300 px-2 py-1 text-sm"
-          required="required"
-        >
-          <option value="">Select Barangay</option>
-          {barangayData &&
-            barangayData.length > 0 &&
-            barangayData.map((item) => (
-              <option key={item.brgy_code} value={item.brgy_code}>
-                {item.brgy_name}
-              </option>
-            ))}
-        </select>
+      <div
+        className={`mb-2 grid grid-cols-4  gap-2  ${
+          !props.onPrintPage
+            ? "[&>div]:max-md:col-span-4"
+            : "[&>div]:max-md:col-span-1"
+        }`}
+      >
+        {addressFields.map((item, index) => (
+          <div key={index} className="flex flex-col">
+            <label htmlFor={item.label} className="text-[11px] font-bold">
+              {item.label}
+            </label>
+            <select
+              id={item.label}
+              onChange={item.onChange}
+              onSelect={item.onSelect}
+              disabled={
+                props?.profileData ? (!isUpdating ? true : false) : false
+              }
+              className={`rounded-sm ${
+                props?.profileData
+                  ? !isUpdating
+                    ? "appearance-none"
+                    : "border"
+                  : "border"
+              } border-gray-300 px-2 py-1 disabled:bg-gray-200 ${
+                props.onPrintPage && "rounded-none border-b"
+              }`}
+              required="required"
+            >
+              {props.profileData ? (
+                <>
+                  {!isUpdating ? (
+                    <option>{item.propValue}</option>
+                  ) : (
+                    <>
+                      <option>{item.propValue}</option>
+                      {item.renderOptions}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <option value="">{item.placeholder}</option>
+                  {item.renderOptions}
+                </>
+              )}
+            </select>
+          </div>
+        ))}
       </div>
 
-      <h1 className="mb-4 text-xl font-bold text-gray-400">Parents</h1>
+      <h1 className="mb-2 text-lg font-bold text-gray-400">Parents</h1>
 
-      <div className="mb-4 flex flex-col gap-2">
-        {parentsField.map((formField, formFieldIndex) => (
-          <div key={formFieldIndex} className="flex flex-col text-sm">
+      <div
+        className={`mb-2 flex ${props?.onPrintPage ? "" : "flex-col"} gap-2`}
+      >
+        {parentsFields.map((formField, formFieldIndex) => (
+          <div key={formFieldIndex} className="flex flex-1 flex-col ">
             <label htmlFor={formField.name} className="text-[11px] font-bold">
               {formField.label}
             </label>
@@ -671,23 +877,36 @@ const SayonForm = (props) => {
               type={formField.type}
               placeholder={formField.placeholder}
               onChange={handleOnChange}
-              className="rounded-sm border border-gray-300 px-2 py-1"
+              disabled={
+                props?.profileData ? (!isUpdating ? true : false) : false
+              }
+              className={`rounded-sm ${
+                props?.profileData ? (!isUpdating ? "" : "border") : "border"
+              } border-gray-300 px-2 py-1 disabled:bg-gray-200 ${
+                props.onPrintPage && "rounded-none border-b"
+              }`}
               required
             />
           </div>
         ))}
       </div>
 
-      <div className="mb-4">
-        <h1 className="text-xl font-bold text-gray-400">Guardian</h1>
+      <div className="mb-2">
+        <h1 className="text-lg font-bold text-gray-400">Guardian</h1>
         <span className="text-xs">(If Not Parent)</span>
       </div>
 
-      <div className="mb-4 grid grid-cols-3 gap-2">
-        {guardianField.map((formField, formFieldIndex) => (
+      <div
+        className={`mb-2 grid ${
+          props?.onPrintPage ? "grid-cols-3" : "grid-cols-2"
+        } gap-2`}
+      >
+        {guardianFields.map((formField, formFieldIndex) => (
           <div
             key={formFieldIndex}
-            className={`flex flex-col text-sm ${formField.span} max-md:col-span-3`}
+            className={`flex flex-col ${formField.span} ${
+              props.onPrintPage && "border-b max-md:col-span-1"
+            }`}
           >
             <label htmlFor={formField.name} className="text-[11px] font-bold">
               {formField.label}
@@ -699,17 +918,22 @@ const SayonForm = (props) => {
               type={formField.type}
               placeholder={formField.placeholder}
               onChange={handleOnChange}
-              className="rounded-sm border border-gray-300 px-2 py-1"
+              disabled={
+                props?.profileData ? (!isUpdating ? true : false) : false
+              }
+              className={`rounded-sm ${
+                props?.profileData ? (!isUpdating ? "" : "border") : "border"
+              } border-gray-300 px-2 py-1 disabled:bg-gray-200`}
             />
           </div>
         ))}
       </div>
 
-      <h1 className="mb-4 text-xl font-bold text-gray-400">Remarks</h1>
+      <h1 className="mb-2 text-lg font-bold text-gray-400">Remarks</h1>
 
-      <div className="mb-4 flex gap-2 max-md:flex-col">
-        {learningField.map((formField, formFieldIndex) => (
-          <div key={formFieldIndex} className="flex flex-1 flex-col text-sm">
+      <div className={`${props.onPrintPage ? "" : "mb-2"} flex gap-2`}>
+        {learningFields.map((formField, formFieldIndex) => (
+          <div key={formFieldIndex} className="flex flex-1 flex-col">
             <label htmlFor={formField.name} className="text-[11px] font-bold">
               {formField.label}
             </label>
@@ -720,19 +944,61 @@ const SayonForm = (props) => {
               type={formField.type}
               placeholder={formField.placeholder}
               onChange={handleOnChange}
-              className="rounded-sm border border-gray-300 px-2 py-1"
+              disabled={
+                props?.profileData ? (!isUpdating ? true : false) : false
+              }
+              className={`rounded-sm ${
+                props?.profileData ? (!isUpdating ? "" : "border") : "border"
+              } border-gray-300 px-2 py-1 disabled:bg-gray-200 ${
+                props.onPrintPage && "rounded-none border-b"
+              }`}
             />
           </div>
         ))}
       </div>
-      <button
-        className="w-full rounded-md bg-blue-500 px-2 py-1 text-sm font-semibold text-white"
-        type="submit"
-      >
-        Submit
-      </button>
+
+      {!props.profileData ? (
+        <button
+          className="w-full rounded-md bg-blue-500 px-2 py-1 font-semibold text-white"
+          type="submit"
+        >
+          Submit
+        </button>
+      ) : !props.onPrintPage ? (
+        <div className="flex items-center justify-between gap-4">
+          {!isUpdating ? (
+            <button
+              className="w-full rounded-md bg-blue-500 px-2 py-1 text-sm font-semibold text-white"
+              type="button"
+              onClick={() => {
+                setIsUpdating(true);
+                props.isUpdating(true);
+              }}
+            >
+              Edit
+            </button>
+          ) : (
+            <>
+              <button
+                className="w-full rounded-md bg-gray-500 px-2 py-1 text-sm font-semibold text-white"
+                type="button"
+                onClick={handleCancelUpdate}
+              >
+                Cancel
+              </button>
+              <button
+                className="w-full rounded-md bg-blue-500 px-2 py-1 text-sm font-semibold text-white"
+                type="button"
+                onClick={handleUpdateProfile}
+              >
+                Update
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
     </form>
   );
-};
+});
 
 export default SayonForm;

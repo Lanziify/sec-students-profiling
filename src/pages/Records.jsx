@@ -22,7 +22,7 @@ const Records = () => {
       }).then((result) => {
         /* Read more about isConfirmed, isDenied below */
         if (result.isConfirmed) {
-          navigate(`student/${profile.lrn}`);
+          navigate(`student/${profile.lrn}`, {state: profile});
           // Swal.fire("Saved!", "", "success");
         } else if (result.isDenied) {
           Swal.fire("Changes are not saved", "", "info");

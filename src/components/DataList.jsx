@@ -8,7 +8,6 @@ const DataList = (props) => {
       name: "LRN",
       selector: (data, index) => data.lrn,
       sortable: true,
-      grow: 2,
     },
     {
       name: "Name",
@@ -25,25 +24,31 @@ const DataList = (props) => {
       hide: "lg",
     },
     {
+      name: "Grade level",
+      selector: (data) => data.school.gradelvl,
+      sortable: true,
+      right: true,
+      hide: "md",
+    },
+    {
       name: "Age",
       selector: (data) => data.age,
       sortable: true,
       right: true,
-      hide: "md",
+      hide: "sm",
     },
     {
       name: "Sex",
       selector: (data) => data.sex,
       sortable: true,
       right: true,
-      hide: "md",
+      hide: "sm",
     },
     {
       name: "Section",
       selector: (data) => data.school.section,
       sortable: true,
       right: true,
-      hide: "sm",
     },
   ];
   const tableStyle = {
@@ -84,7 +89,6 @@ const DataList = (props) => {
       title="Students Profile"
       columns={columns}
       data={props.data}
-      selectableRows
       striped={true}
       pointerOnHover
       highlightOnHover
