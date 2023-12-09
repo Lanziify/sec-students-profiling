@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
-import { MdEditDocument, MdFolder,  MdPerson } from "react-icons/md";
+import { MdEditDocument, MdFolder,  MdPerson, MdSettings } from "react-icons/md";
 import { NavLink, useLocation } from "react-router-dom";
 import Portal from "./Portal";
 
@@ -18,6 +18,11 @@ const Menu = (props) => {
       name: "Students Record",
       path: "records",
       icon: <MdFolder size={18} />,
+    },
+    {
+      name: "Settings",
+      path: "settings",
+      icon: <MdSettings size={18} />,
     },
   ];
   const handleLogout = async () => {

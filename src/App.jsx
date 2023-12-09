@@ -8,6 +8,8 @@ import Register from "./pages/Register";
 import Records from "./pages/Records";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
+import ChangePassword from "./pages/ChangePassword";
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
       <Route element={<Protected />}>
         <Route path="" index element={<Home />} />
         <Route path="records" element={<Records />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="settings/change_password" element={<ChangePassword />} />
         <Route path="records/student/:lrn" element={<Profile />} />
       </Route>
 

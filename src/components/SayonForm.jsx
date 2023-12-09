@@ -16,6 +16,7 @@ import {
   addDoc,
   getDocs,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { firestore } from "../config/firebase-config";
 import Swal from "sweetalert2";
@@ -620,6 +621,64 @@ const SayonForm = forwardRef((props, ref) => {
     }
   };
 
+  const handleDeleteProfile = async () => {
+    try {
+      await Swal.fire({
+        icon: "warning",
+        title: "Are you sure you want to delete this record?",
+        showCancelButton: true,
+        showConfirmButton: true,
+        confirmButtonText: "Confirm",
+        reverseButtons: true,
+        confirmButtonColor: "#3b82f6",
+        cancelButtonColor: "#6b7280",
+        customClass: {
+          title: "text-xl",
+          htmlContainer: "swal2-text-body",
+        },
+      }).then(async (result) => {
+        if (result.isDenied) {
+          return;
+        }
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: "Deleting Record",
+            allowEscapeKey: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            },
+          });
+          await deleteDoc(doc(profileDocRef, props.profileData.docId));
+          Swal.close();
+          Swal.fire({
+            icon: "success",
+            title: "Profile Deleted!",
+            showConfirmButton: false,
+            customClass: {
+              title: "text-xl",
+              htmlContainer: "swal2-text-body",
+            },
+          });
+          navigate(-1);
+        }
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops! Something went wrong.",
+        text: error.message,
+        showConfirmButton: true,
+        confirmButtonText: "Confirm",
+        confirmButtonColor: "#3b82f6",
+        customClass: {
+          title: "text-xl",
+          htmlContainer: "swal2-text-body",
+        },
+      });
+    }
+  };
+
   useEffect(() => {
     if (props.profileData) {
       setValue(props.profileData);
@@ -992,6 +1051,13 @@ const SayonForm = forwardRef((props, ref) => {
                 onClick={handleUpdateProfile}
               >
                 Update
+              </button>
+              <button
+                className="w-full rounded-md bg-red-500 px-2 py-1 text-sm font-semibold text-white"
+                type="button"
+                onClick={handleDeleteProfile}
+              >
+                Delete
               </button>
             </>
           )}

@@ -49,7 +49,6 @@ function Login() {
         await loginUser(value.email, value.password);
         setLoading(false);
       } catch (error) {
-        console.log(error)
         const errorMessage = ErrorHandler.AuthError(error, AuthErrorCodes);
         setError({ ...error, authError: errorMessage });
         setLoading(false);

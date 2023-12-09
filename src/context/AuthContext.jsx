@@ -8,6 +8,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { collection, doc, setDoc } from "firebase/firestore";
+import Preloader from "../components/Preloader";
 
 const userDocRef = collection(firestore, "user");
 
@@ -47,7 +48,6 @@ export function AuthContextProvider({ children }) {
   }
 
   async function loginUser(email, password) {
-    setUserLoading(true);
     return signInWithEmailAndPassword(auth, email, password).then(() => {
       setUserLoading(false);
     });
@@ -87,7 +87,11 @@ export function AuthContextProvider({ children }) {
     userLoading,
     userToken,
   };
-  return <Context.Provider value={value}>{children}</Context.Provider>;
+  return (
+    <Context.Provider value={value}>
+      {userLoading ? <Preloader /> : children}
+    </Context.Provider>
+  );
 }
 
 export function useAuth() {
