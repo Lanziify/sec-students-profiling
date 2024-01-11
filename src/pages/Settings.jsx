@@ -16,21 +16,21 @@ const Settings = () => {
     },
   ];
   return (
-    <div className="p-4">
-      <h1 className="mb-4 text-xl font-bold">Settings</h1>
-      <div className="mb-2 flex flex-col gap-2">
+    <div>
+      <h1 className="text-xl font-bold p-4">Settings</h1>
+      <div className="flex flex-col">
         {settingsItems.map((item, index) => (
           <NavLink
             key={index}
             to={item.path}
-            className="group inline-flex cursor-pointer items-center gap-2"
+            className="group inline-flex p-2 hover:bg-gray-100 cursor-pointer items-center gap-2"
           >
-            <p className="text-sm group-hover:opacity-50">{item.option}</p>
+            <p className="text-sm group-hover:opacity-90">{item.option}</p>
           </NavLink>
         ))}
       </div>
       <div
-        className="cursor-pointer text-sm hover:opacity-50"
+        className="cursor-pointer p-2 text-sm hover:bg-gray-100 hover:opacity-90"
         onClick={logoutUser}
       >
         Logout

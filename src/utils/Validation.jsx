@@ -1,3 +1,4 @@
+import { strings } from "../constants/strings";
 import { REG } from "./Regex";
 
 export const Validation = {
@@ -6,18 +7,21 @@ export const Validation = {
 
     if (!values.email) {
       errorMessage.email = "Email is required";
-    } else if (!REG.email.test(values.email)) {
+    } else if (!strings.emailRegex.test(values.email)) {
       errorMessage.email = "Please enter a valid email address";
     }
     // Password validation
     if (!values.password) {
       errorMessage.password = "Password is required";
     }
+     else if (!strings.passwordRegex.test(values.password)) {
+      errorMessage.password =
+        "Password must be eight characters long, at least one letter and one number";
+    }
     return errorMessage;
   },
   validateRegister: (values) => {
     const errorMessage = {};
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
     if (!values.displayName) {
       errorMessage.displayName = "Name is required";
@@ -26,20 +30,19 @@ export const Validation = {
     }
     if (!values.email) {
       errorMessage.email = "Email is required";
-    } else if (!REG.email.test(values.email)) {
+    } else if (!strings.emailRegex.test(values.email)) {
       errorMessage.email = "Please enter a valid email address";
     }
     // Password validation
     if (!values.password) {
       errorMessage.password = "Password is required";
-    } else if (!passwordRegex.test(values.password)) {
+    } else if (!strings.passwordRegex.test(values.password)) {
       errorMessage.password =
         "Password must be eight characters long, at least one letter and one number";
     }
     return errorMessage;
   },
   validatePasswordReset: (values) => {
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
     const errorMessage = {};
 
     if (!values.current) {
@@ -48,7 +51,7 @@ export const Validation = {
 
     if (!values.new) {
       errorMessage.newPassword = "Please enter your new password";
-    } else if (!passwordRegex.test(values.new)) {
+    } else if (!strings.passwordRegex.test(values.new)) {
       errorMessage.newPassword =
         "Password must be eight characters long, at least one letter and one number";
     }

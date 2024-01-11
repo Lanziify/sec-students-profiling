@@ -18,7 +18,7 @@ export const ErrorHandler = {
         errorMessage = "Weak password! Please try again.";
         break;
       default:
-        errorMessage = "Oops! Something went wrong.";
+        errorMessage = "Incorrect email or password. Please try again.";
         break;
     }
     return errorMessage;

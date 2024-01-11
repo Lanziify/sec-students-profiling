@@ -32,14 +32,14 @@ const ChangePassword = () => {
       name: "current",
       value: values.current,
       type: "text",
-      error: error.currentPassword,
+      error: error.current,
     },
     {
       id: "new_password",
       label: "New Password",
       name: "new",
       value: values.new,
-      error: error.newPassword,
+      error: error.new,
       type: showPassword ? "text" : "password",
     },
     {
@@ -47,7 +47,7 @@ const ChangePassword = () => {
       label: "Confirm Password",
       name: "confirm",
       value: values.confirm,
-      error: error.confirmPassword,
+      error: error.confirm,
       type: showPassword ? "text" : "password",
     },
   ];
@@ -117,7 +117,7 @@ const ChangePassword = () => {
   return (
     <form className="flex flex-col gap-2 p-4" onSubmit={handleSubmit}>
       <NavLink
-        to={-1}
+        to="/settings"
         className="mb-4 flex items-center gap-1 text-sm font-semibold hover:opacity-50 "
       >
         <IoChevronBack size={18} />

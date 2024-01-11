@@ -20,9 +20,9 @@ const Profile = () => {
   return (
     <div>
       {!isEditing && (
-        <div className="flex items-center justify-between rounded-t-md border-b bg-blue-500 p-4">
+        <div className="flex items-center justify-between max-w-7xl m-auto p-4">
           <button
-            className="flex items-center rounded-md p-2 text-white hover:bg-blue-600"
+            className="flex items-center rounded-md p-2  hover:bg-gray-300"
             onClick={() => navigate(-1)}
           >
             <MdArrowBackIos />

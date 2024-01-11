@@ -691,7 +691,7 @@ const SayonForm = forwardRef((props, ref) => {
   }, []);
 
   return (
-    <form className="p-4 text-sm" onSubmit={handleSubmitForm} ref={ref}>
+    <form className="p-4 text-sm max-w-7xl m-auto" onSubmit={handleSubmitForm} ref={ref}>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-center text-xl font-black text-blue-500">

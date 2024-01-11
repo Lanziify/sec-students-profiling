@@ -10,12 +10,14 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import ChangePassword from "./pages/ChangePassword";
+import About from "./pages/About";
+import Hero from "./pages/Hero";
 
 function App() {
   return (
     <Routes>
       <Route element={<Protected />}>
-        <Route path="" index element={<Home />} />
+        <Route path="form" index element={<Home />} />
         <Route path="records" element={<Records />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/change_password" element={<ChangePassword />} />
@@ -23,8 +25,10 @@ function App() {
       </Route>
 
       <Route element={<Public />}>
+        <Route path="" index element={<Hero />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+        <Route path="about" element={<About />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
